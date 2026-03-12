@@ -23,7 +23,7 @@ const upload = multer({ storage });
 async function listProducts(req, res) {
     try {
         const result = await pool.query(
-            `SELECT p.*, c.name AS category_name
+            `SELECT p.*, c.name AS category_name 
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id
        WHERE p.restaurant_id = $1
