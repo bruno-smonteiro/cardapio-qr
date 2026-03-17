@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const { getDashboard, updateRestaurant } = require('../controllers/adminController');
 const { listCategories, createCategory, updateCategory, deleteCategory } = require('../controllers/categoryController');
 const { listProducts, createProduct, updateProduct, deleteProduct, upload } = require('../controllers/productController');
+const { getQRCode } = require('../controllers/qrCodeController');
 
 // All routes below require a valid JWT
 router.use(auth);
@@ -23,5 +24,8 @@ router.get('/products', listProducts);
 router.post('/products', upload.single('image'), createProduct);
 router.put('/products/:id', upload.single('image'), updateProduct);
 router.delete('/products/:id', deleteProduct);
+
+// QR Code
+router.get('/qrcode', getQRCode);
 
 module.exports = router;
