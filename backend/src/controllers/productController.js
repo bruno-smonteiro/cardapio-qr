@@ -1,6 +1,5 @@
 const pool = require('../db');
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
 cloudinary.config({
@@ -9,16 +8,7 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const storage = new CloudinaryStorage({
-    cloudinary,
-    params: {
-        folder: 'cardapioqr/products',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 800, height: 600, crop: 'limit', quality: 'auto' }],
-    },
-});
-
-const upload = multer({ storage });
+const upload = multer({ storage: multer.memoryStorage() });
 
 async function listProducts(req, res) {
     try {
@@ -41,7 +31,17 @@ async function createProduct(req, res) {
     const { category_id, name, description, price, sort_order = 0 } = req.body;
     if (!name || !price) return res.status(400).json({ error: 'Nome e preço são obrigatórios' });
 
-    const image_url = req.file ? req.file.path : null;
+    let image_url = null;
+    if (req.file) {
+        const uploadResult = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                { folder: `cardapio-qr/${req.user.restaurantId}` },
+                (err, result) => err ? reject(err) : resolve(result)
+            );
+            stream.end(req.file.buffer);
+        });
+        image_url = uploadResult.secure_url;
+    }
 
     try {
         const result = await pool.query(
@@ -59,7 +59,18 @@ async function createProduct(req, res) {
 async function updateProduct(req, res) {
     const { id } = req.params;
     const { category_id, name, description, price, available, sort_order } = req.body;
-    const image_url = req.file ? req.file.path : undefined;
+
+    let image_url = undefined;
+    if (req.file) {
+        const uploadResult = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                { folder: `cardapio-qr/${req.user.restaurantId}` },
+                (err, result) => err ? reject(err) : resolve(result)
+            );
+            stream.end(req.file.buffer);
+        });
+        image_url = uploadResult.secure_url;
+    }
 
     const fields = [];
     const values = [];
