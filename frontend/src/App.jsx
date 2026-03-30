@@ -3,10 +3,12 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminPage from './pages/AdminPage'
 import MenuPage from './pages/MenuPage'
+import SuperAdminLoginPage from './pages/SuperAdminLoginPage'
+import SuperAdminPage from './pages/SuperAdminPage'
 import { useAuth } from './hooks/useAuth'
 
-function PrivateRoute({ children }) {
-    const { isAuthenticated, isLoading } = useAuth()
+function RoleRoute({ children, allowedRoles, fallbackPath = '/login' }) {
+    const { isAuthenticated, isLoading, role } = useAuth()
 
     if (isLoading) {
         return (
@@ -16,7 +18,15 @@ function PrivateRoute({ children }) {
         )
     }
 
-    return isAuthenticated ? children : <Navigate to="/login" replace />
+    if (!isAuthenticated) {
+        return <Navigate to={fallbackPath} replace />
+    }
+
+    if (!allowedRoles.includes(role)) {
+        return <Navigate to={role === 'super_admin' ? '/super-admin' : '/admin'} replace />
+    }
+
+    return children
 }
 
 export default function App() {
@@ -24,8 +34,31 @@ export default function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
+                <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
+                <Route
+                    path="/register"
+                    element={
+                        <RoleRoute allowedRoles={['super_admin']} fallbackPath="/super-admin/login">
+                            <SuperAdminPage />
+                        </RoleRoute>
+                    }
+                />
+                <Route
+                    path="/super-admin"
+                    element={
+                        <RoleRoute allowedRoles={['super_admin']} fallbackPath="/super-admin/login">
+                            <SuperAdminPage />
+                        </RoleRoute>
+                    }
+                />
+                <Route
+                    path="/admin"
+                    element={
+                        <RoleRoute allowedRoles={['restaurant_admin']}>
+                            <AdminPage />
+                        </RoleRoute>
+                    }
+                />
                 <Route path="/menu/:slug" element={<MenuPage />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
             </Routes>

@@ -4,18 +4,24 @@ import api from '../services/api'
 export function useAuth() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const [role, setRole] = useState(null)
+    const [email, setEmail] = useState(null)
 
     useEffect(() => {
         let active = true
 
         api.get('/api/auth/me')
-            .then(() => {
+            .then(({ data }) => {
                 if (!active) return
                 setIsAuthenticated(true)
+                setRole(data.role || null)
+                setEmail(data.email || null)
             })
             .catch(() => {
                 if (!active) return
                 setIsAuthenticated(false)
+                setRole(null)
+                setEmail(null)
             })
             .finally(() => {
                 if (!active) return
@@ -27,7 +33,12 @@ export function useAuth() {
         }
     }, [])
 
-    function login() {
+    function login(nextRole) {
+        if (nextRole === 'super_admin') {
+            window.location.href = '/super-admin'
+            return
+        }
+
         window.location.href = '/admin'
     }
 
@@ -44,6 +55,9 @@ export function useAuth() {
     return {
         isAuthenticated,
         isLoading,
+        role,
+        email,
+        isSuperAdmin: role === 'super_admin',
         login,
         logout,
     }

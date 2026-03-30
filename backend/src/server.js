@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth');
 const menuRoutes = require('./routes/menu');
 const adminRoutes = require('./routes/admin');
+const superAdminRoutes = require('./routes/superAdmin');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
