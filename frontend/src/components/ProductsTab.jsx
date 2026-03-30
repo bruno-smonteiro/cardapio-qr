@@ -7,7 +7,9 @@ export default function ProductsTab() {
     const [form, setForm] = useState({ name: '', description: '', price: '', category_id: '' })
     const [image, setImage] = useState(null)
     const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
     const [loading, setLoading] = useState(false)
+    const [seedLoading, setSeedLoading] = useState(false)
 
     async function fetchAll() {
         try {
@@ -28,9 +30,18 @@ export default function ProductsTab() {
         setForm({ ...form, [e.target.name]: e.target.value })
     }
 
+    useEffect(() => {
+        if (!success) return undefined
+
+        const timeout = window.setTimeout(() => setSuccess(''), 3500)
+        return () => window.clearTimeout(timeout)
+    }, [success])
+
     async function handleCreate(e) {
         e.preventDefault()
         setLoading(true)
+        setError('')
+        setSuccess('')
         try {
             const formData = new FormData()
             Object.entries(form).forEach(([k, v]) => formData.append(k, v))
@@ -38,6 +49,7 @@ export default function ProductsTab() {
             await api.post('/api/admin/products', formData)
             setForm({ name: '', description: '', price: '', category_id: '' })
             setImage(null)
+            setSuccess('Produto adicionado com sucesso')
             fetchAll()
         } catch (err) {
             setError(err.response?.data?.error || 'Erro ao criar produto')
@@ -46,10 +58,29 @@ export default function ProductsTab() {
         }
     }
 
+    async function handleSeedItalianMenu() {
+        setSeedLoading(true)
+        setError('')
+        setSuccess('')
+
+        try {
+            const { data } = await api.post('/api/admin/seed/italian-menu')
+            setSuccess(
+                `${data.categoriesCreated} categorias e ${data.productsCreated} produtos italianos adicionados ao menu`
+            )
+            fetchAll()
+        } catch (err) {
+            setError(err.response?.data?.error || 'Erro ao gerar menu italiano')
+        } finally {
+            setSeedLoading(false)
+        }
+    }
+
     async function handleDelete(id) {
         if (!confirm('Remover produto?')) return
         try {
             await api.delete(`/api/admin/products/${id}`)
+            setSuccess('Produto removido com sucesso')
             fetchAll()
         } catch {
             setError('Erro ao remover produto')
@@ -61,6 +92,26 @@ export default function ProductsTab() {
             <h2 className="text-lg font-bold text-gray-800 mb-4">Produtos</h2>
 
             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            {success && <p className="text-emerald-600 text-sm mb-3">{success}</p>}
+
+            <div className="mb-6 rounded-2xl border border-orange-100 bg-orange-50/70 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-orange-900">Popular menu italiano</p>
+                        <p className="mt-1 text-sm text-orange-800/80">
+                            Gera categorias, pratos, descricoes e fotos de exemplo sem apagar seus itens atuais.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleSeedItalianMenu}
+                        disabled={seedLoading}
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50"
+                    >
+                        {seedLoading ? 'Gerando menu...' : 'Gerar menu italiano'}
+                    </button>
+                </div>
+            </div>
 
             <form onSubmit={handleCreate} className="space-y-3 mb-6">
                 <input

@@ -5,6 +5,7 @@ const { getDashboard, updateRestaurant } = require('../controllers/adminControll
 const { listCategories, createCategory, updateCategory, deleteCategory } = require('../controllers/categoryController');
 const { listProducts, createProduct, updateProduct, deleteProduct, upload } = require('../controllers/productController');
 const { getQRCode } = require('../controllers/qrCodeController');
+const { seedItalianMenu } = require('../controllers/seedController');
 
 // All routes below require a valid JWT
 router.use(auth);
@@ -24,6 +25,7 @@ router.get('/products', listProducts);
 router.post('/products', upload.single('image'), createProduct);
 router.put('/products/:id', upload.single('image'), updateProduct);
 router.delete('/products/:id', deleteProduct);
+router.post('/seed/italian-menu', seedItalianMenu);
 
 // QR Code
 router.get('/qrcode', getQRCode);
