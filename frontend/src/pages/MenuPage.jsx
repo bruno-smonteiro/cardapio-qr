@@ -319,7 +319,7 @@ export default function MenuPage() {
                                                 key={product.id}
                                                 className="overflow-hidden rounded-[28px] border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/40 transition hover:border-orange-200 hover:shadow-md"
                                             >
-                                                <div className="flex gap-4">
+                                                <div className="flex flex-col gap-4 sm:flex-row">
                                                     <div className="min-w-0 flex-1">
                                                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
                                                             {category.name}
@@ -328,15 +328,7 @@ export default function MenuPage() {
                                                             {product.name}
                                                         </h3>
                                                         {product.description ? (
-                                                            <p
-                                                                className="mt-2 text-sm leading-6 text-stone-500"
-                                                                style={{
-                                                                    display: '-webkit-box',
-                                                                    WebkitBoxOrient: 'vertical',
-                                                                    WebkitLineClamp: 2,
-                                                                    overflow: 'hidden',
-                                                                }}
-                                                            >
+                                                            <p className="mt-2 text-sm leading-6 text-stone-500">
                                                                 {product.description}
                                                             </p>
                                                         ) : (
@@ -353,10 +345,10 @@ export default function MenuPage() {
                                                         <img
                                                             src={product.image_url}
                                                             alt={product.name}
-                                                            className="h-28 w-28 flex-shrink-0 rounded-[24px] object-cover sm:h-32 sm:w-32"
+                                                            className="h-40 w-full flex-shrink-0 rounded-[24px] object-cover sm:h-32 sm:w-32"
                                                         />
                                                     ) : (
-                                                        <div className="flex h-28 w-28 flex-shrink-0 items-center justify-center rounded-[24px] bg-stone-100 text-center text-xs font-medium uppercase tracking-[0.16em] text-stone-400 sm:h-32 sm:w-32">
+                                                        <div className="flex h-40 w-full flex-shrink-0 items-center justify-center rounded-[24px] bg-stone-100 text-center text-xs font-medium uppercase tracking-[0.16em] text-stone-400 sm:h-32 sm:w-32">
                                                             Sem foto
                                                         </div>
                                                     )}
