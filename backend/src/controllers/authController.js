@@ -14,11 +14,13 @@ function generateToken(userId, restaurantId) {
 
 function getCookieOptions() {
     const isProduction = process.env.NODE_ENV === 'production';
+    const sameSite = process.env.COOKIE_SAME_SITE || (isProduction ? 'none' : 'lax');
+    const secure = sameSite === 'none' ? true : isProduction;
 
     return {
         httpOnly: true,
-        sameSite: 'lax',
-        secure: isProduction,
+        sameSite,
+        secure,
         maxAge: TOKEN_MAX_AGE_MS,
         path: '/',
     };
@@ -123,13 +125,9 @@ function me(req, res) {
 }
 
 function logout(req, res) {
-    const isProduction = process.env.NODE_ENV === 'production';
-
     res.clearCookie('token', {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: isProduction,
-        path: '/',
+        ...getCookieOptions(),
+        maxAge: undefined,
     });
 
     return res.json({ success: true });
