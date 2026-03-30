@@ -1,17 +1,21 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function authMiddleware(req, res, next) {
-    const header = req.headers['authorization'];
-    if (!header) return res.status(401).json({ error: 'Token não fornecido' });
+    const bearerHeader = req.headers.authorization;
+    const bearerToken = bearerHeader?.startsWith('Bearer ')
+        ? bearerHeader.split(' ')[1]
+        : null;
+    const token = bearerToken || req.cookies?.token;
 
-    const token = header.split(' ')[1]; // Bearer <token>
-    if (!token) return res.status(401).json({ error: 'Token malformado' });
+    if (!token) {
+        return res.status(401).json({ error: 'Autenticacao obrigatoria' });
+    }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // { userId, restaurantId }
+        req.user = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ error: 'Token inválido ou expirado' });
+        return res.status(401).json({ error: 'Sessao invalida ou expirada' });
     }
 };

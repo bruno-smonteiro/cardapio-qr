@@ -18,8 +18,8 @@ export default function LoginPage() {
         setError('')
         setLoading(true)
         try {
-            const { data } = await api.post('/api/auth/login', form)
-            login(data.token)
+            await api.post('/api/auth/login', form)
+            login()
         } catch (err) {
             setError(err.response?.data?.error || 'Erro ao fazer login')
         } finally {

@@ -2,19 +2,37 @@ const pool = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const TOKEN_MAX_AGE_MS = 1000 * 60 * 60 * 12;
+
 function generateToken(userId, restaurantId) {
     return jwt.sign(
         { userId, restaurantId },
         process.env.JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '12h' }
     );
+}
+
+function getCookieOptions() {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    return {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isProduction,
+        maxAge: TOKEN_MAX_AGE_MS,
+        path: '/',
+    };
+}
+
+function setAuthCookie(res, token) {
+    res.cookie('token', token, getCookieOptions());
 }
 
 async function register(req, res) {
     const { restaurantName, slug, email, password } = req.body;
 
     if (!restaurantName || !slug || !email || !password) {
-        return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+        return res.status(400).json({ error: 'Todos os campos sao obrigatorios' });
     }
 
     const slugClean = slug.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -26,13 +44,13 @@ async function register(req, res) {
         const existSlug = await client.query('SELECT id FROM restaurants WHERE slug = $1', [slugClean]);
         if (existSlug.rows.length > 0) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Esse slug já está em uso. Escolha outro.' });
+            return res.status(409).json({ error: 'Esse slug ja esta em uso. Escolha outro.' });
         }
 
         const existEmail = await client.query('SELECT id FROM users WHERE email = $1', [email]);
         if (existEmail.rows.length > 0) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'E-mail já cadastrado.' });
+            return res.status(409).json({ error: 'E-mail ja cadastrado.' });
         }
 
         const restaurantResult = await client.query(
@@ -51,7 +69,9 @@ async function register(req, res) {
         await client.query('COMMIT');
 
         const token = generateToken(userId, restaurantId);
-        return res.status(201).json({ token, restaurantId, slug: slugClean });
+        setAuthCookie(res, token);
+
+        return res.status(201).json({ restaurantId, slug: slugClean });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('register error:', err);
@@ -65,7 +85,7 @@ async function login(req, res) {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        return res.status(400).json({ error: 'E-mail e senha são obrigatórios' });
+        return res.status(400).json({ error: 'E-mail e senha sao obrigatorios' });
     }
 
     try {
@@ -75,21 +95,44 @@ async function login(req, res) {
         );
 
         if (userResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Credenciais inválidas' });
+            return res.status(401).json({ error: 'Credenciais invalidas' });
         }
 
         const user = userResult.rows[0];
         const valid = await bcrypt.compare(password, user.password_hash);
         if (!valid) {
-            return res.status(401).json({ error: 'Credenciais inválidas' });
+            return res.status(401).json({ error: 'Credenciais invalidas' });
         }
 
         const token = generateToken(user.id, user.restaurant_id);
-        return res.json({ token, restaurantId: user.restaurant_id });
+        setAuthCookie(res, token);
+
+        return res.json({ restaurantId: user.restaurant_id });
     } catch (err) {
         console.error('login error:', err);
         return res.status(500).json({ error: 'Erro interno do servidor' });
     }
 }
 
-module.exports = { register, login };
+function me(req, res) {
+    return res.json({
+        authenticated: true,
+        userId: req.user.userId,
+        restaurantId: req.user.restaurantId,
+    });
+}
+
+function logout(req, res) {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    res.clearCookie('token', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isProduction,
+        path: '/',
+    });
+
+    return res.json({ success: true });
+}
+
+module.exports = { register, login, me, logout };

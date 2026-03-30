@@ -18,8 +18,8 @@ export default function RegisterPage() {
         setError('')
         setLoading(true)
         try {
-            const { data } = await api.post('/api/auth/register', form)
-            login(data.token)
+            await api.post('/api/auth/register', form)
+            login()
         } catch (err) {
             setError(err.response?.data?.error || 'Erro ao cadastrar')
         } finally {
